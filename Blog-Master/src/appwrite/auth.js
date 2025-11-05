@@ -54,7 +54,7 @@ export class AuthService {
         }catch(error){
             throw error;
         }
-    }
+    } // this is a async func. => all async functions implicitly returns a promise so we can use .then() with them.
 
     async getCurrentUser() {
         try{
