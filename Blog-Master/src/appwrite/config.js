@@ -1,4 +1,4 @@
-import conf from './config.js';
+import conf from '../conf/conf.js';
 import {
   Client,
   ID,
@@ -19,171 +19,194 @@ export class Service {
         .setEndpoint(conf.appwriteUrl)
         .setProject(conf.appwriteProjectId);
 
-        this.tableDB = new TablesDB(this.client); // what is tableDB here? => used to interact with appwrite database tables.
-        this.storage = new Storage(this.client); // what is storage here? => used to upload files in appwrite.
+        this.tableDB = new TablesDB(this.client); // what is tableDB here? 
+        this.storage = new Storage(this.client); // what is storage here? 
         // file related operations are done using storage object. that is connected with Bucket.
     }
+// this class will have only one instance throughout the app, so all diffrent users use the same database table and bucket to store their posts and images.
 
     async createPost(title, slug, content, featuredImage, userId, status) {
-        try {
-            const newPost = await this.tableDB.createRow(
-                conf.appwriteDatabaseId,
-                conf.appwriteTableId,
-                {
-                    title,
-                    slug,
-                    content,
-                    featuredImage,
-                    userId,
-                    status,
-                } // no need of rowid as it is auto generated in appwrite now.
-                // data can be passed in any order irrespective to the order of columns of your database cols in appwrite
-                // Appwrite doesn’t care about the order of the keys. It looks at the field names (keys) and maps them to your table columns internally.
-                ,
-                [
-                    // Permissions array
-                    Permission.read(Role.any()),               // anyone can read
-                    Permission.update(Role.user(userId)),      // only creator can update
-                    Permission.delete(Role.user(userId)),      // only creator can delete
-                ]
-            );
-            if(newPost) console.log(newPost.$id) // this is your rowId generated auto by appwrite for everyrow you insert.           
-        } 
-        catch (error) {
+    try {
+        const newPost = await this.tableDB.createRow({
+        databaseId: conf.appwriteDatabaseId,
+        tableId: conf.appwriteTableId,
+        // rowId is optional – let Appwrite generate one on its own
+        data: {
+            title,
+            slug,
+            content,
+            featuredImage,
+            userId,
+            status,
+        },
+        permissions: [
+            Permission.read(Role.any()),
+            Permission.update(Role.user(userId)),
+            Permission.delete(Role.user(userId)),
+        ],
+        // all users have permission to read blog but only current user have permission to update or delete it.
+        });
+
+        if (newPost) console.log(newPost.$id);
+        return newPost; // you probably want to return it
+    } catch (error) {
         console.log(`Error in createPost: ${error.message}`);
         return null;
-        }
+    }
     }
 
-    async updatePost(slug,{title, content, featuredImage, userId, status}) {
-        try {
-            // fetch the Row with matching slug 
-            const response = await this.tableDB.listRows(
-                conf.appwriteDatabaseId,
-                conf.appwriteTableId,
-                [Query.equal("slug", slug)]
-                );
+    async updatePost(slug, { title, content, featuredImage, userId, status }) {
+    try {
+        const response = await this.tableDB.listRows({
+            databaseId: conf.appwriteDatabaseId,
+            tableId: conf.appwriteTableId,
+            queries: [Query.equal("slug", slug)],
+        });
 
-            if (!response.rows || response.rows.length === 0) console.log('No post found')
-
-            const rowId = response.rows[0].$id;
-
-            // update the row as now we have the rowId that appwrite generated.
-            return await this.tableDB.updateRow(
-                conf.appwriteDatabaseId,
-                conf.appwriteTableId,
-                rowId,
-                {
-                    title,
-                    slug,
-                    content,
-                    featuredImage,
-                    userId,
-                    status,
-                }
-            );
-        } catch (error) {
-            console.log(`Error in updatePostBySlug: ${error.message}`);
-            return null;
+        if (!response.rows || response.rows.length === 0) {
+            console.log("No post found");
+            return null;      // you must return here to avoid crash
         }
-    }
 
-    async deletePost(slug){
-        try{
-            // fetch the Row with matching slug 
-            const response =  await this.tableDB.listRows(
-                conf.appwriteDatabaseId,
-                conf.appwriteTableId,
-                [Query.equal("slug", slug)]
-                );
+        const rowId = response.rows[0].$id;
 
-            if (!response.rows || response.rows.length === 0) console.log('No post found')
-
-            const rowId = response.rows[0].$id;
-
-            // delete the row as now we have the rowId that appwrite generated.
-            return await this.tableDB.deleteRow(
-                conf.appwriteDatabaseId,
-                conf.appwriteTableId,
-                rowId
-            );          
-        }
-        catch (error) {
-            console.log(`Error in deletePostBySlug: ${error.message}`);
-            return false; // return false if Post deletion failed.
-        }
-    }
-
-    async getPost(slug){
-        const response = await this.tableDB.listRows(
-            conf.appwriteDatabaseId,
-            conf.appwriteTableId,
-            [Query.equal("slug",slug)]  // left "slug" is for columns of table and right slug is to match i.e get the specific row whose "slug"=slug.
-        )
-        if (!response.rows || response.rows.length === 0){
-            return null;
-        }
-        return response.rows[0]; // return the object only matching given slug. (structure of response if written in notes.)
-    }
-
-    async getPosts(queries = [Query.equal("status","active")]){ // to get all posts with active status. .. you mave have multiple queries in this list.
-        try{
-            const response = await this.tableDB.listRows(
-                    conf.appwriteDatabaseId,
-                    conf.appwriteTableId,
-                    queries
-            )
-            if (!response.rows || response.rows.length === 0){
-                return null; 
-            }
-            return response.rows; // array of all posts.
-        } // will this auto return null if no rows found? => no, it will return empty array.
-        catch(error){
-            console.log("error in get all posts: ",error);
-        }
-    }
-
-    async uploadFile(file){ //you need to pass the image file here.
-        try{
-            const response = await this.storage.createFile(
-                conf.appwriteBucketId,
-                ID.unique(),
-                file,
-                [
-                    Permission.read(Role.any()), // anyone can read
-                ]
-            );
-            return response.$id; // return the fileId generated by appwrite. (this fileId will be stored in featuredImage column of our posts table.)
-        }
-        catch(error){
-            console.log("error in file upload: ",error);
-        }
+        return await this.tableDB.updateRow({
+            databaseId: conf.appwriteDatabaseId,
+            tableId: conf.appwriteTableId,
+            rowId,
+            data: {
+                title,
+                slug,
+                content,
+                featuredImage,
+                userId,
+                status,
+            },
+        });
     } 
+    catch (error) {
+        console.log(`Error in updatePostBySlug: ${error.message}`);
+        return null;
+    }
+    }
+
+    async deletePost(slug) {
+    try {
+        const response = await this.tableDB.listRows({
+        databaseId: conf.appwriteDatabaseId,
+        tableId: conf.appwriteTableId,
+        queries: [Query.equal("slug", slug)],
+        });
+
+        if (!response.rows || response.rows.length === 0) {
+        console.log("No post found");
+        return false;
+        }
+
+        const rowId = response.rows[0].$id;
+// response.rows is an array of rows that match the query. since slug is unique,array will contain only 1 element and 
+//  we are taking first element of array and that is the only element in array because it will be the only match 
+// and from that array we are taking $id property which is the rowId of that post.
+        await this.tableDB.deleteRow({
+        databaseId: conf.appwriteDatabaseId,
+        tableId: conf.appwriteTableId,
+        rowId,
+        });
+
+        return true;
+    } 
+    catch (error) {
+        console.log(`Error in deletePostBySlug: ${error.message}`);
+        return false;
+    }
+    }
+
+    async getPost(slug) {
+    try {
+        const response = await this.tableDB.listRows({
+        databaseId: conf.appwriteDatabaseId,
+        tableId: conf.appwriteTableId,
+        queries: [Query.equal("slug", slug)],
+        });
+
+        if (!response.rows || response.rows.length === 0) {
+        return null;
+        }
+
+        return response.rows[0];
+    } catch (error) {
+        console.log("Error in getPost: ", error);
+        return null;
+    }
+    }
+
+    async getPosts(queries = [Query.equal("status", "active")]) {
+    try {
+        const response = await this.tableDB.listRows({
+        databaseId: conf.appwriteDatabaseId,
+        tableId: conf.appwriteTableId,
+        queries,
+        });
+
+        if (!response.rows || response.rows.length === 0) {
+        return null; // your choice: null vs []
+        }
+
+        return response.rows;
+    } 
+    catch (error) {
+        console.log("error in get all posts: ", error);
+        return null;
+    }
+    }
+
+    async uploadFile(file) {
+    try {
+        const response = await this.storage.createFile({
+        bucketId: conf.appwriteBucketId,
+        fileId: ID.unique(),
+        file,
+        permissions: [
+            Permission.read(Role.any()),
+            Permission.update(Role.user(userId)),
+            Permission.delete(Role.user(userId)),
+        ],
+        });
+        return response.$id;  // return the fileId generated by appwrite after uploading the file
+    } 
+    catch (error) {
+        console.log("error in file upload: ", error);
+        return null;
+    }
+    }
+ 
     // above function uploaded the file and returned the fileId generated by appwrite which we can store in our posts table.
 
-    async deleteFile(fileId){ // fileId = featureImage column value of our posts table.
-        try{
-            await this.storage.deleteFile(
-                conf.appwriteBucketId,
-                fileId  
-            )
-            return true; // return true if file deleted successfully.
-        }catch(error){
-            console.log("error in file delete: ",error);
-            return false; // return false if file deletion failed.
-        }
+    async deleteFile(fileId) {
+    try {
+        await this.storage.deleteFile({
+        bucketId: conf.appwriteBucketId,
+        fileId,
+        });
+        return true;
+    } catch (error) {
+        console.log("error in file delete: ", error);
+        return false;
+    }
     }
 
-    getFilePreview(fileId){
-        try{
-            return this.storage.getFilePreview(
-                conf.appwriteBucketId,
-                fileId
-            )
-        }catch(error){
-            console.log("error in getting file preview: ",error);
-        }
-    } 
+// from where will i get the fileId? => from the post data where we stored it while creating the post.
+    
+    getFilePreview(fileId) {
+    try {
+        return this.storage.getFilePreview({
+        bucketId: conf.appwriteBucketId,
+        fileId,
+        });
+    } catch (error) {
+        console.log("error in getting file preview: ", error);
+    }
+    }
     // no need to make this func async as this function just returns the url to preview the image. that is very fast operation.
 }
 
@@ -191,3 +214,23 @@ const service = new Service();
 export default service;
 
 // all methods in class are diffrent services that we provide to user and are used to interact with appwrite database and storage.
+
+/**
+ *:=> 
+client
+    Just a JS object that knows:
+    Which Appwrite endpoint (URL) to talk to
+    Which project ID to use
+    Which session/cookies to send (this is how it knows which user is logged in)
+
+tableDB
+    A helper object from the SDK that wraps all TablesDB APIs (createRow, listRows, updateRow, deleteRow).
+    It does not “contain” the database; it just knows how to talk to the database service on the server.
+
+storage
+    A helper object that wraps all Storage APIs (createFile, deleteFile, getFilePreview).
+    Again: it does not hold files in memory; it just sends requests to Appwrite Storage on the server.
+ 
+client is required just to where the requests are sent.
+we have only one object of this class and that is what we are returning at the end of the file.
+*/

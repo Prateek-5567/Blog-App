@@ -3,46 +3,44 @@ import { Client, Account, ID } from "appwrite";
 
 // Initialize Appwrite SDK
 // This is a service class to handle authentication related operations
+//we will export its object to use its methods.
 
 export class AuthService { 
     client = new Client(); // why const is not used here? Answer : Because we are defining a class property, not a constant variable.
     account;
 
     constructor(){
-        this.client
+        this.client 
             .setEndpoint(conf.appwriteUrl) // Your Appwrite Endpoint
             .setProject(conf.appwriteProjectId); // Your project ID
         this.account = new Account(this.client);  // Initialize account service
     }
 
     async createAccount(email, password, name) {
-        try{
-
-            const userAccount = await this.account.create(
-                ID.unique(),
+        try {
+            const userAccount = await this.account.create({
+                userId: ID.unique(),
                 email,
                 password,
-                name
-            );  
-            // first parameter is always unique id.
+                name,
+            });
 
-            if(userAccount){  // if the account is created successfully 
-                return this.login(email, password); // when account is created successfully, log the user in.
-            }else{
-                return userAccount; // it will be null if account creation failed. ~ return null;
+            if (userAccount) {
+                return this.login(email, password);
+            } else {
+                return userAccount; // null
             }
-
-        }catch(error){
+        } catch (error) {
             throw error;
         }
     }
 
     async login(email, password) {
         try{
-            return await this.account.createEmailPasswordSession(
+            return await this.account.createEmailPasswordSession({
                 email,
                 password
-            );
+            } );
         }catch(error){
             console.log(`Error in login: ${error}`);
         }
