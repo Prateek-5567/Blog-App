@@ -17,7 +17,7 @@ const postSlice = createSlice({
     }
 });
 /**
- * setPosts = “replace all posts with new ones” : inOrder to initialize the structure of you posts list in state.
+ * setPosts = “replace all posts with new ones” : inOrder to initialize the structure of your posts list in state.
  * addPost = “append one new post to the existing list”
  */
 

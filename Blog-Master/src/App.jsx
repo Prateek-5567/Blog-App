@@ -1,6 +1,6 @@
 import React from 'react'
-import authService from './appwrite/auth'
-import {logout,login } from './store/authSlice'
+import authService from './appwrite/auth' // authService is an object of AuthService class.
+import {logout,login } from './store/authSlice'  // reducers : came from react-redux
 import {useDispatch} from 'react-redux'
 import {Header,Footer} from './components/index' 
 import {useEffect,useState} from 'react'
@@ -32,7 +32,8 @@ function App() {
   // no dependency passed: call on mount. 
 
   return !loading?( 
-    <>
+    // loading is false here.
+    <> 
       <div className='min-h-screen flex flex-wrap content-between bg-slate-900 text-slate-100'>
         <div className='w-full block'>
           <Header />
@@ -44,6 +45,7 @@ function App() {
       </div>
     </>
   ):(
+    // loading is true here.
     <div className="flex bg-slate-900 text-slate-100 justify-center items-center min-h-screen bg-transparent">
         <div className="w-12 h-12 border-4 border-gray-300 border-t-slate-900 rounded-full animate-spin"></div>
     </div>

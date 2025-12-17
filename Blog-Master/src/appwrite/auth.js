@@ -33,7 +33,7 @@ export class AuthService {
         } catch (error) {
             throw error;
         }
-    }
+    } // calls login after account is created and login returns a emailPass session.
 
     async login(email, password) {
         try{
@@ -60,7 +60,7 @@ export class AuthService {
         }catch(error){
             console.log(`Error in getCurrentUser: ${error}`);
         }
-    }
+    } // return current user data.
 }
 
 const authService = new AuthService();

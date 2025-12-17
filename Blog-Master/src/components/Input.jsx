@@ -1,5 +1,5 @@
 import React, {useId} from 'react'
-// useId is optional.
+// Label and input have same id so When label is clicked then also input will become active.
 
 const Input = React.forwardRef( function Input({
     label,
