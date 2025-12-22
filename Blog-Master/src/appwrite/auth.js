@@ -65,3 +65,5 @@ export class AuthService {
 
 const authService = new AuthService();
 export default authService;
+
+// JUST BECAUSE YOU HAVE EXPORTED authService as default := so you can import it by any namew
