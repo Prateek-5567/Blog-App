@@ -30,7 +30,7 @@ export default function Protected({children, authentication = true}) {
     }, [authStatus, navigate, authentication])
     // dependencies is important here... , when you navigate from one page to another then useEffect runs this function => authentication check takes place.
 
-  return loader ? <h1>Loading...</h1> : <>{children}</>
+  return loader? <h1> Loading... </h1> : <div>{children}</div>;
 }
 // purpose : conditional rendering of children ; if auth = true => render .
 

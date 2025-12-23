@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import authService from '../appwrite/auth'
 import {Link ,useNavigate} from 'react-router-dom'
-import {storeLogin} from '../store/authSlice'
+import {login} from '../store/authSlice'
 import {Button, Input, Logo} from './index.js'
 import {useDispatch} from 'react-redux'
 import {useForm} from 'react-hook-form'
@@ -13,24 +13,22 @@ function Signup() {
     const {register, handleSubmit} = useForm()
 
     const create = async(data) => {
-        setError("");
+        setError("")
         try {
-            const session = await authService.createAccount(data); // createAccount returns a session.
-            if(session){
-                const userData = await authService.getCurrentUser(); // get user data if session is created.
-
-                if(userData) dispatch(storeLogin(userData));
-                
-                navigate("/");
+            const userData = await authService.createAccount(data)
+            if (userData) {
+                const userData = await authService.getCurrentUser()
+                if(userData) dispatch(login(userData));
+                navigate("/")
             }
         } catch (error) {
-            setError(error.message);
+            setError(error.message)
         }
     }
 
   return (
     <div className="flex items-center justify-center">
-            <div className={`mx-auto w-full max-w-lg bg-slate-300 rounded-xl p-10 border border-black/10`}>
+            <div className={`mx-auto w-full max-w-lg bg-gray-100 rounded-xl p-10 border border-black/10`}>
             <div className="mb-2 flex justify-center">
                     <span className="inline-block w-full max-w-[100px]">
                         <Logo width="100%" />
@@ -66,7 +64,6 @@ function Signup() {
                             validate: {
                                 matchPatern: (value) => /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value) ||
                                 "Email address must be a valid address",
-                                // this is regex : regular exp for pattern matching .
                             }
                         })}
                         />
@@ -75,9 +72,7 @@ function Signup() {
                         type="password"
                         placeholder="Enter your password"
                         {...register("password", {
-                            required: true,
-                            minLength:8,
-                        })}
+                            required: true,})}
                         />
                         <Button type="submit" className="w-full">
                             Create Account

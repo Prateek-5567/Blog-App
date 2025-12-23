@@ -9,6 +9,9 @@ import {
   Role
 } from 'appwrite';
 
+// we have created an article table in our database to handle post related features.
+// post.$id = its slug , post.userid = to which user post belongs...
+
 export class Service {
   client = new Client();
   tableDB;
@@ -53,7 +56,7 @@ export class Service {
         console.log(`Error in createPost: ${error.message}`);
         return null;
     }
-    }
+    } // createPost returns the post data after successful creation.
 
     async updatePost(slug, { title, content, featuredImage, userId, status }) {
     try {
@@ -213,6 +216,7 @@ export class Service {
 const service = new Service();
 export default service;
 
+// JUST BECAUSE YOU HAVE EXPORTED service as default := so you can import it by any name usually it is : import appWriteService from ...
 // all methods in class are diffrent services that we provide to user and are used to interact with appwrite database and storage.
 
 /**

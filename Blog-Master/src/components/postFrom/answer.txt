@@ -1,0 +1,89 @@
+You have two sources of slug updates:
+    Auto-generation from Title
+        -Done via watch("title") (useEffect hook)
+    Manual user edits
+        -Done via this onInput (whenever there is some change update slug on realtime)
+    e.currentTarget.value = event.currentTarget i.e current input field ki value.
+                
+Yes, the code WILL still work without "onInput".
+But it will behave differently. The difference is intentional.
+
+What happens if you REMOVE onInput
+You already have this:
+
+        watch((value, { name }) => {
+        if (name === "title") {
+            setValue("slug", slugTransform(value.title), { shouldValidate: true });
+        }
+        });
+
+Behavior then : 
+    -User types in Title
+    -Slug is auto-generated from Title
+    -Slug field updates correctly
+    -Validation runs
+    -✅ Works
+
+'If the user never touches the Slug field, you’re done.'
+    ###  BUT:
+What breaks WITHOUT "onInput"
+
+The moment the user manually edits the Slug field:
+
+        (User can type:
+
+        Hello World !!! @@@)
+
+React Hook Form accepts it as-is
+
+watch does NOT run, because:
+
+    name === "slug"  // ignored
+
+
+Invalid slug enters form state
+
+Validation might catch it, but format is not enforced
+
+So:
+Auto-generation works
+Manual correction is not normalized
+
+Why useEffect + watch() is NOT enough
+
+    Because it listens only to:
+        if (name === "title")
+
+
+That logic:
+
+Responds to Title changes only
+
+Completely ignores Slug changes
+
+This is by design to avoid loops.
+
+If you try to also listen to "slug" there:
+
+You’ll create infinite update cycles
+
+Slug change → setValue → slug change → setValue → …
+
+Role separation (this is the key insight)
+Mechanism	            Responsibility
+watch + useEffect	    Auto-generate slug from title
+onInput	Enforce slug format when user edits slug
+
+They solve two different problems.
+
+Why not rely only on validation?
+
+Because:
+
+Validation tells you something is wrong
+
+onInput prevents wrong data from entering at all
+
+Prevention > correction.
+
+This is not redundancy. It is deliberate separation of concerns.

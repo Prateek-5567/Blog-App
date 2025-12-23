@@ -4,6 +4,7 @@ import { Client, Account, ID } from "appwrite";
 // Initialize Appwrite SDK
 // This is a service class to handle authentication related operations
 //we will export its object to use its methods.
+// auth naam ka ek section hai apne appwrite me that stores username , email and password and handles authentication.
 
 export class AuthService { 
     client = new Client(); // why const is not used here? Answer : Because we are defining a class property, not a constant variable.
@@ -66,4 +67,4 @@ export class AuthService {
 const authService = new AuthService();
 export default authService;
 
-// JUST BECAUSE YOU HAVE EXPORTED authService as default := so you can import it by any namew
+// JUST BECAUSE YOU HAVE EXPORTED authService as default := so you can import it by any name
