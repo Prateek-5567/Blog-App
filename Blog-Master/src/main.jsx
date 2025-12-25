@@ -29,7 +29,8 @@ const router = createBrowserRouter([
         {
             path: "/login",
             element: (
-                <AuthLayout authentication={false}>
+                <AuthLayout authentication={false}> {/* if authentication = false then only you can go to this route (somtimes url change karke user try to go to diffrent pages.
+                                                        if user is logged in it must not be allowed to go to login page by changing the url this work id done by AuthLayout.) */}
                     <Login />
                 </AuthLayout>
             ),
@@ -54,7 +55,7 @@ const router = createBrowserRouter([
         {
             path: "/add-post",
             element: (
-                <AuthLayout authentication>
+                <AuthLayout authentication> {/** when auth=true then only you can go to this route */}
                     {" "}
                     <AddPost />
                 </AuthLayout>
